@@ -70,6 +70,16 @@ class Igra:
                 else:
                     return NAPACNA_CRKA
 
+    def stevilo_pravilnih_crk_s_ponovitvami(self):
+        stevec = 0
+        for crka in self.geslo:
+            if crka in self.crke:
+                stevec += 1
+            else:
+                pass
+        return stevec
+
+
 
 with open("besede.txt", "r", encoding="utf-8") as datoteka_z_besedami:
     bazen_besed = [vrstica.strip().upper() for vrstica in datoteka_z_besedami]
@@ -121,3 +131,33 @@ class Vislice:
             igre = json.load(f)
             self.igre = {int(id_igre): (Igra(geslo, crke), poskus)
                          for id_igre, ((geslo, crke), poskus) in igre.items()}
+
+
+def odstotek(stevec, imenovalec):
+    return round((stevec / imenovalec) * 100)
+
+
+def statistika(datoteka_s_stanjem):
+    slovar_statistik = {}
+    vislice = Vislice(datoteka_s_stanjem)
+    vislice.nalozi_igre_iz_datoteke()
+
+    stevilo_iger = len(vislice.igre.keys())
+    slovar_statistik["stevilo_iger"] = stevilo_iger
+
+    stevilo_zmag = sum([1 if poskus == ZMAGA else 0 for _, poskus in vislice.igre.values()])
+    slovar_statistik["odstotek_zmag"] = odstotek(stevilo_zmag, stevilo_iger)
+
+    stevilo_porazov = sum([1 if poskus == PORAZ else 0 for _, poskus in vislice.igre.values()])
+    slovar_statistik["odstotek_porazov"] = odstotek(stevilo_porazov, stevilo_iger)
+
+    stevilo_nedokoncnih_iger = stevilo_iger - stevilo_zmag - stevilo_porazov
+    slovar_statistik["odstotek_nedokoncanih_iger"] = odstotek(stevilo_nedokoncnih_iger, stevilo_iger)
+
+    najdaljse_uganjeno_geslo = max([igra.geslo if poskus == ZMAGA else "" for igra, poskus in vislice.igre.values()], key=len)
+    slovar_statistik["najdaljse_uganjeno_geslo"] = najdaljse_uganjeno_geslo
+
+    odstotki_uganjenih_crk = [odstotek(igra.stevilo_pravilnih_crk_s_ponovitvami(), len(igra.geslo)) for igra, _ in vislice.igre.values()]
+    slovar_statistik["povprecen_odstotek_uganjenih_crk"] = "{0:.2f}".format(sum(odstotki_uganjenih_crk) / len(odstotki_uganjenih_crk))
+
+    return slovar_statistik
